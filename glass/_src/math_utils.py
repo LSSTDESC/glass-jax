@@ -22,7 +22,7 @@ def cumtrapz(f, x, out=None):
     if out is None:
         out = jnp.empty_like(f)
 
-    # CHANGE: Careful.
     out = jnp.cumsum((f[..., 1:] + f[..., :-1])/2*jnp.diff(x), axis=-1)
-    out = out.at[..., 0].set(0)
+    out = jnp.insert(out, 0, 0.)
     return out
+
