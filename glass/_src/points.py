@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import jax.random as random
 import healpy as hp
 
-from math_utils import ARCMIN2_SPHERE, trapz_product
+from .math_utils import ARCMIN2_SPHERE, trapz_product
 
 
 def effective_bias(bias_z, bias_b, window_z, window_w):
