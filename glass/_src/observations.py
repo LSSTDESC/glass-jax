@@ -7,7 +7,7 @@ import healpy as hp
 from typing import Optional, Tuple, List
 from numpy.typing import ArrayLike
 
-from math_utils import cumtrapz
+from .math_utils import cumtrapz
 
 
 def vmap_galactic_ecliptic(nside: int, galactic: Tuple[float, float] = (30, 90),
