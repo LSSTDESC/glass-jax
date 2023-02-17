@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from jax import lax 
 from jax import random as jrandom
-import healpix
+import healpix 
 
 from typing import Optional, Tuple
 
