@@ -48,18 +48,18 @@ def ellipticity_ryden04(mu, sigma, gamma, sigma_gamma, size=None, *, rng=None):
     # draw gamma and epsilon from truncated normal -- eq.s (10)-(11)
     # first sample unbounded normal, then rejection sample truncation
     #eps = norm.rvs(rng, mu, sigma, size=size)
-    eps = numpyro.sample('eps', dist.Normal(mu, sigma).expand([size]).to_event(1), rng_key=rng)
+    eps = numpyro.sample('eps', numpyro.distributions.Normal(mu, sigma).expand([size]).to_event(1), rng_key=rng)
     bad = (eps > 0)
     while jnp.any(bad):
         #eps = norm.rvs(rng, mu, sigma, size=eps[bad].shape)
-        eps = numpyro.sample('eps', dist.Normal(mu, sigma).expand([eps[bad].shape]).to_event(1), rng_key=rng)
+        eps = numpyro.sample('eps', numpyro.distributions.Normal(mu, sigma).expand([eps[bad].shape]).to_event(1), rng_key=rng)
         bad = (eps > 0)
     #gam = norm.rvs(rng, gamma, sigma_gamma, size=size)
-    gam = numpyro.sample('eps', dist.Normal(mu, sigma_gamma).expand([size]).to_event(1), rng_key=rng)
+    gam = numpyro.sample('eps', numpyro.distributions.Normal(mu, sigma_gamma).expand([size]).to_event(1), rng_key=rng)
     bad = (gam < 0) | (gam > 1)
     while jnp.any(bad):
         #gam = norm.rvs(rng, gamma, sigma_gamma, size=gam[bad].shape)
-        gam = numpyro.sample('eps', dist.Normal(mu, sigma_gamma).expand([gam[bad].shape]).to_event(1), rng_key=rng)
+        gam = numpyro.sample('eps', numpyro.distributions.Normal(mu, sigma_gamma).expand([gam[bad].shape]).to_event(1), rng_key=rng)
         bad = (gam < 0) | (gam > 1)
 
     # compute triaxial axis ratios zeta = B/A, xi = C/A
