@@ -1,6 +1,8 @@
+import jax
 import jax.numpy as jnp
 from typing import Optional
 from jax import random
+import numpyro
 
 
 def triaxial_axis_ratio(zeta, xi, size=None, *, rng=None):
@@ -45,15 +47,19 @@ def ellipticity_ryden04(mu, sigma, gamma, sigma_gamma, size=None, *, rng=None):
 
     # draw gamma and epsilon from truncated normal -- eq.s (10)-(11)
     # first sample unbounded normal, then rejection sample truncation
-    eps = norm.rvs(rng, mu, sigma, size=size)
+    #eps = norm.rvs(rng, mu, sigma, size=size)
+    eps = numpyro.sample('eps', dist.Normal(mu, sigma).expand([size]).to_event(1), rng_key=rng)
     bad = (eps > 0)
     while jnp.any(bad):
-        eps = norm.rvs(rng, mu, sigma, size=eps[bad].shape)
+        #eps = norm.rvs(rng, mu, sigma, size=eps[bad].shape)
+        eps = numpyro.sample('eps', dist.Normal(mu, sigma).expand([eps[bad].shape]).to_event(1), rng_key=rng)
         bad = (eps > 0)
-    gam = norm.rvs(rng, gamma, sigma_gamma, size=size)
+    #gam = norm.rvs(rng, gamma, sigma_gamma, size=size)
+    gam = numpyro.sample('eps', dist.Normal(mu, sigma_gamma).expand([size]).to_event(1), rng_key=rng)
     bad = (gam < 0) | (gam > 1)
     while jnp.any(bad):
-        gam = norm.rvs(rng, gamma, sigma_gamma, size=gam[bad].shape)
+        #gam = norm.rvs(rng, gamma, sigma_gamma, size=gam[bad].shape)
+        gam = numpyro.sample('eps', dist.Normal(mu, sigma_gamma).expand([gam[bad].shape]).to_event(1), rng_key=rng)
         bad = (gam < 0) | (gam > 1)
 
     # compute triaxial axis ratios zeta = B/A, xi = C/A
@@ -81,10 +87,10 @@ def ellipticity_gaussian(size, sigma, *, rng=None):
     e *= sigma
     i = jnp.where(jnp.abs(e) > 1)[0]
     while len(i) > 0:
-        e = jax.ops.index_update(e, i, jax.random.normal(rng, shape=(len(i), 2)).astype(jnp.complex128))
-        e *= sigma
-        i = i[jnp.abs(e[i]) > 1]
-
+        # CHANGE: 
+        e.at[i].set(jax.random.normal(rng, shape=(len(i), 2)).astype(jnp.complex128))
+        e = e * sigma
+        # i = i[jnp.abs(e[i]) > 1] # DO WE NEED THAT?
     return e
 
 
