@@ -28,7 +28,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # TODO: Install the dependencies in the proper way with tox!
+        # For now, I'm going to do it manually
+        python -m pip install git+https://github.com/glass-dev/glass.git git+https://github.com/glass-dev/glass-camb.git
+        python -m pip install "jax[cpu]"
+        python -m pip install git+https://github.com/astro-informatics/s2fft.git
+        python -m pip install jax_cosmo 
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
