@@ -61,12 +61,12 @@ def tophat_windows(zbins: ArrayLike1D, dz: float = 1e-3,
 
 def distance_grid(cosmo, zmin, zmax, *, dx=None, num=None):
     '''Redshift grid with uniform spacing in comoving distance.'''
-    xmin = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmin))
-    xmax = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmax))
+    xmin = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmin))/cosmo.h
+    xmax = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmax))/cosmo.h
     if dx is not None and num is None:
         x = jnp.arange(xmin, jnp.nextafter(xmax+dx, xmax), dx)
     elif dx is None and num is not None:
         x = jnp.linspace(xmin, xmax, num+1)
     else:
         raise ValueError('exactly one of "dx" or "num" must be given')
-    return jc.utils.a2z(jc.background.a_of_chi(cosmo, x))
+    return jc.utils.a2z(jc.background.a_of_chi(cosmo, x*cosmo.h))

@@ -1,16 +1,8 @@
 from typing import Optional, Sequence, Tuple, TYPE_CHECKING
 import jax.numpy as jnp
+import jax_cosmo as jc
 
-if TYPE_CHECKING:
-    from jax_cosmo import Cosmology
-
-
-class BornConvergence:
-    """Simple Born approximation for convergence.
-    """
-    def __init__(self, cosmo: 'Cosmology') -> None:
-        self.cosmo
-    
+Cosmology = jc.Cosmology
     
 class MultiPlaneConvergence:
     '''Compute convergence fields iteratively from multiple matter planes.'''
@@ -29,8 +21,7 @@ class MultiPlaneConvergence:
         self.kappa2: Optional[jnp.ndarray] = None
         self.kappa3: Optional[jnp.ndarray] = None
 
-    def add_window(self, delta: jnp.ndarray, z: jnp.ndarray, w: jnp.ndarray,
-                   zsrc: Optional[float] = None) -> None:
+    def add_window(self, delta: jnp.ndarray, w: 'RadialWindow') -> None:
         '''Add a mass plane from a window function to the convergence.
 
         The source plane redshift can be given using ``zsrc``.
@@ -38,10 +29,8 @@ class MultiPlaneConvergence:
 
         '''
 
-        if zsrc is None:
-            zsrc = jnp.trapz(z*w, z)/jnp.trapz(w, z)
-
-        lens_weight = jnp.trapz(w, z)/jnp.interp(zsrc, z, w)
+        zsrc = w.zeff
+        lens_weight = jnp.trapz(w.wa, w.za)/jnp.interp(zsrc, w.za, w.wa)
 
         self.add_plane(delta, zsrc, lens_weight)
 
@@ -62,15 +51,16 @@ class MultiPlaneConvergence:
         w2, self.w3 = self.w3, wlens
 
         # extrapolation law
-        x2, self.x3 = self.x3, self.cosmo.xm(self.z3)
+        x2, self.x3 = self.x3, jc.background.transverse_comoving_distance(self.cosmo, jc.utils.z2a(self.z3))
         r12 = self.r23
-        r13, self.r23 = self.cosmo.xm([z1, self.z2], self.z3)/self.x3
+        r13 = jnp.abs(jc.background.transverse_comoving_distance(self.cosmo, jc.utils.z2a(z1)) - self.x3)/self.x3
+        self.r23 = jnp.abs(jc.background.transverse_comoving_distance(self.cosmo, jc.utils.z2a(self.z2)) - self.x3) /self.x3
         t = r13/r12
 
         # lensing weight of mass plane to be added
-        f = 3*self.cosmo.omega_m/2
-        f *= x2*self.r23
-        f *= (1 + self.z2)/self.cosmo.ef(self.z2)
+        f = 3*self.cosmo.Omega_m/2 
+        f *= x2*self.r23 / jc.constants.rh
+        f *= (1 + self.z2)/jnp.sqrt(jc.background.Esqr(self.cosmo, jc.utils.z2a(self.z2)))
         f *= w2
 
         # create kappa planes on first iteration
