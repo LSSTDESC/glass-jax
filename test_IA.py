@@ -100,91 +100,26 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-
-# %%
-# Make a visibility map typical of a space telescope survey, seeing both
-# hemispheres, and low visibility in the galactic and ecliptic bands.
-vis = glass.observations.vmap_galactic_ecliptic(nside)
-# checking the mask:
-hp.mollview(vis, title='LSST-like Survey Mask', unit='Visibility', coord='CG')
-plt.show()
-
-# %%
-# Simulation
-# ----------
-# Simulate maps of lensing and clustering, without actually sampling
-# from them
-
-# Shear maps
-kap_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-gam1_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-gam2_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-gam1_ia_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-gam2_ia_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-
-
-# Galaxy density maps
-gal_map = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0)
-
-ngals = np.zeros(5)
-
-# simulate the matter fields in the main loop, and build up the catalogue
 for i, delta_i in enumerate(matter):
-
-    # compute the lensing maps for this shell
-    convergence.add_window(delta_i, zs[i], ws[i])  
-    kappa_i = convergence.kappa
-    gamm1_i, gamm2_i = glass.lensing.shear_from_convergence(kappa_i)
-
-    # the photometric galaxy distribution in this shell
-    tomo_z_i, tomo_nz_i = glass.shells.restrict(z, tomo_nz, zs[i], ws[i])
-
-    print(zb[i])
 
     ia = glass.intrinsic_alignments.get_IA(zb[i], delta_i, A1=0.18, bTA=0.8, A2=0.1, model='NLA')
 
     hp.mollview(np.log10(2+delta_i))
     plt.show()
 
-    
 
-    hp.mollview(ia.real/np.max(ia.real))
+    hp.mollview(np.log10(1+ia.real))
     plt.show()
 
-    hp.mollview(ia.imag/np.max(ia.imag))
+    hp.mollview(np.log10(1+ia.imag))
     plt.show()
 
 
     ia = glass.intrinsic_alignments.get_IA(zb[i], delta_i, A1=0.18, bTA=0.8, A2=0.1, model='TATT')
 
-    hp.mollview(ia.real/np.max(ia.real))
+    hp.mollview(np.log10(1+ia.real))
     plt.show()
 
-    hp.mollview(ia.imag/np.max(ia.imag))
+    hp.mollview(np.log10(1+ia.imag))
     plt.show()
-
-    for j in range(5):
-        # compute the galaxy density in this shell
-        ngal = np.trapz(tomo_nz_i[j], tomo_z_i)
-
-        # Add contribution from this redshift
-        kap_bar[j] += ngal * kappa_i
-        gam1_bar[j] += ngal * gamm1_i
-        gam2_bar[j] += ngal * gamm2_i
-        ngals[j] += ngal
-            
-        gal_map += ngal * delta_i
-
-
-hp.mollview(ia.real)
-plt.show()
-
-hp.mollview(ia.imag)
-
-hp.mollview(kap_bar[0])
-plt.show()
-
-hp.mollview(gal_map[0])
-plt.show()
-
 
