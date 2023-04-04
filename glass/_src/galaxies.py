@@ -5,7 +5,7 @@ import healpix
 
 from typing import Optional, Tuple
 
-from .math_utils import cumtrapz
+from math_utils import cumtrapz
 
 
 def redshifts_from_nz(size: int, z: jnp.ndarray, nz: jnp.ndarray, *,
