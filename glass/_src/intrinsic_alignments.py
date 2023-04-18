@@ -2,13 +2,52 @@ import dataclasses
 import jax.numpy as jnp
 import jax.scipy as jsp
 import jax_cosmo as jc
+import glass.jax as jglass
 import pyccl.ccllib as lib
 import healpy as hp
 import jax
+import s2fft
+import pylab as plt
+
 
 rho_crit = lib.cvar.constants.RHO_CRITICAL
 
+def tidal_tensor_jax(hpmap):
+
+    delta = jnp.copy(hpmap)
+    nside = hp.get_nside(hpmap)
+
+    alm_E = s2fft.forward_jax(hpmap, 512, reality=True, sampling="healpix", nside=nside)
+    print('s2fft', jnp.shape(alm_E))
+    print(alm_E)
+
+    alm_E_base = hp.map2alm(hpmap, lmax=512, mmax=None, iter=3, pol=False, use_weights=False, datapath=None)
+    print('healpy', jnp.shape(alm_E_base))
+    print(alm_E_base)
+
+    print("diff", alm_E - alm_E_base)
+
+    plt.plot(alm_E)
+    plt.plot(alm_E_base)
+    plt.show()
+
+    alm_B = jnp.zeros_like(alm_E)
+
+    # smoothing if necessary here
+
+    maps_QU = hp.alm2map_spin((alm_E, alm_B), nside, spin=2, lmax=5000, mmax=None)
+
+    tidal_tensor_sph = jnp.zeros((hp.nside2npix(nside), 3), dtype=jnp.float32)
+
+    tidal_tensor_sph = jnp.concatenate([
+      ((maps_QU[0] + delta) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
+      ((delta - maps_QU[0]) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
+      maps_QU[1][:,jnp.newaxis]], axis=1)
+
+    return tidal_tensor_sph
+
 def tidal_tensor(hpmap):
+
     delta = jnp.copy(hpmap)
 
     nside = hp.get_nside(hpmap)
@@ -88,7 +127,8 @@ def TATT(cosmo, z, A1, bTA, A2, tidal_field, delta):
 
 def get_IA(z, density_planes, A1=0.18, bTA=0.8, A2=0.1, model='NLA'):
 
-    tidal_tensor_map = tidal_tensor(density_planes)
+    tidal_tensor_map = tidal_tensor_jax(density_planes)
+
     cosmo = jc.Planck15() #FIXME pass cosmo as argument (camb -> jax)
     redshift = jnp.atleast_1d(z)
 
