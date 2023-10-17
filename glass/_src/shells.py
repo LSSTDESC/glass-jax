@@ -98,10 +98,11 @@ def distance_grid(cosmo, zmin, zmax, *, dx=None, num=None):
     '''Redshift grid with uniform spacing in comoving distance.'''
     xmin = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmin))/cosmo.h
     xmax = jc.background.radial_comoving_distance(cosmo, jc.utils.z2a(zmax))/cosmo.h
+    print(xmin[0], xmax[0])
     if dx is not None and num is None:
-        x = jnp.arange(xmin, jnp.nextafter(xmax+dx, xmax), dx)
+        x = jnp.arange(xmin[0], jnp.nextafter(xmax[0]+dx, xmax[0]), dx)
     elif dx is None and num is not None:
-        x = jnp.linspace(xmin, xmax, num+1)
+        x = jnp.linspace(xmin[0], xmax[0], num+1)
     else:
         raise ValueError('exactly one of "dx" or "num" must be given')
     return jc.utils.a2z(jc.background.a_of_chi(cosmo, x*cosmo.h))
