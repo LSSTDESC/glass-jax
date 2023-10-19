@@ -84,12 +84,6 @@ def generate_lognormal(gls, shifts, C2w_f, w2C_f, nside, L, seed):
         yield mag_ln
 
 
-def fill_cov_mat(m, nbins):
-    idx = jnp.triu_indices(nbins)
-    cov_mat = jnp.zeros((nbins, nbins)).at[idx].set(m).T.at[idx].set(m)
-    return cov_mat
-
-
 def _interp_farray(x_query, x, f_x):
     f_axis0 = vmap(jnp.interp, in_axes=(None, None, 0))
     f_axis1 = vmap(f_axis0, in_axes=(None, None, 0))
