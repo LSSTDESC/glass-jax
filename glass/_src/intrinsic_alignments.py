@@ -2,30 +2,41 @@ import dataclasses
 import jax.numpy as jnp
 import jax.scipy as jsp
 import jax_cosmo as jc
+import glass.jax as jglass
 import pyccl.ccllib as lib
 import healpy as hp
 import jax
+import s2fft
+import pylab as plt
+from s2fft.sampling import s2_samples as samples
 
 rho_crit = lib.cvar.constants.RHO_CRITICAL
 
-def tidal_tensor(hpmap):
-    delta = jnp.copy(hpmap)
+def tidal_tensor_jax(hpmap):
 
+    delta = jnp.copy(hpmap)
     nside = hp.get_nside(hpmap)
 
-    alm_E = hp.map2alm(hpmap, lmax=5000, mmax=None, iter=3, pol=False, use_weights=False, datapath=None)
-    alm_B = jnp.zeros_like(alm_E) # FIXME: jaxify
+    L = 512
+
+    alm_m2 = s2fft.forward_jax(hpmap, L, spin=-2, reality=True, sampling="healpix", nside=nside)
+    alm_p2 = s2fft.forward_jax(hpmap, L, spin=2, reality=True, sampling="healpix", nside=nside)
+
+    alm_E = -0.5 * (alm_p2 + alm_m2)
+    alm_B = 0.5 * 1j * (alm_p2 - alm_m2)
 
     # smoothing if necessary here
-
-    maps_QU = hp.alm2map_spin((alm_E, alm_B), nside, spin=2, lmax=5000, mmax=None)
-
+    
+    # inverse_transform with spin=2
+    f_E = s2fft.inverse_jax(alm_E, L, reality=True, sampling="healpix", nside=nside)
+    f_B = s2fft.inverse_jax(alm_B, L, reality=True, sampling="healpix", nside=nside)     
+    
     tidal_tensor_sph = jnp.zeros((hp.nside2npix(nside), 3), dtype=jnp.float32)
 
     tidal_tensor_sph = jnp.concatenate([
-      ((maps_QU[0] + delta) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
-      ((delta - maps_QU[0]) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
-      maps_QU[1][:,jnp.newaxis]], axis=1)
+      ((f_E + delta) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
+      ((delta - f_E) / 2.0 - 1.3 * hpmap)[:,jnp.newaxis],
+      f_B[:,jnp.newaxis]], axis=1)
 
     return tidal_tensor_sph
 
@@ -88,7 +99,8 @@ def TATT(cosmo, z, A1, bTA, A2, tidal_field, delta):
 
 def get_IA(z, density_planes, A1=0.18, bTA=0.8, A2=0.1, model='NLA'):
 
-    tidal_tensor_map = tidal_tensor(density_planes)
+    tidal_tensor_map = tidal_tensor_jax(density_planes)
+
     cosmo = jc.Planck15() #FIXME pass cosmo as argument (camb -> jax)
     redshift = jnp.atleast_1d(z)
 
