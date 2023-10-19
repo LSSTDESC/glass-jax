@@ -17,13 +17,9 @@ def generate_gaussian(gls, nside, L, seed):
     sampling = "healpix"
     mean_pixel_area = 4 * np.pi / hp.nside2npix(nside)
     scaling_factor = np.sqrt(1 / mean_pixel_area)
-
-    # mean_pixel_area = 1 / hp.nside2npix(nside)
-    # scaling_factor = np.sqrt(4 / mean_pixel_area)
     keys = jax.random.split(seed, len(gls))
 
     for i, cl in enumerate(gls):
-        # print("in loop in generate_gaussian, cl shape", cl.shape)
         # Sample gaussian map
         z = (
             jax.random.normal(key=keys[i], shape=(hp.nside2npix(nside),))
@@ -54,7 +50,6 @@ def generate_lognormal(gls, shifts, C2w_f, w2C_f, nside, L, seed):
     # here we just assume C2w and w2C carries information of the ell ranegs of gls
     ell = jnp.arange(L)
     ell_log = C2w_f.x
-    # print(ell_log.shape, gls[0][0].shape)
 
     for i, (cl, shift) in enumerate(zip(gls, shifts)):
         # TODO: we could perform the Hankel transform in batch if this loop is slow
