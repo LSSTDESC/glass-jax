@@ -8,7 +8,6 @@ import pyccl.ccllib as lib
 import jax
 import s2fft
 import pylab as plt
-from s2fft.sampling import s2_samples as samples
 
 rho_crit = lib.cvar.constants.RHO_CRITICAL
 
