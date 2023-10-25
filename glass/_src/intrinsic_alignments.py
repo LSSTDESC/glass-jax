@@ -1,10 +1,10 @@
 import dataclasses
+import healpy as hp
 import jax.numpy as jnp
 import jax.scipy as jsp
 import jax_cosmo as jc
 import glass.jax as jglass
 import pyccl.ccllib as lib
-import healpy as hp
 import jax
 import s2fft
 import pylab as plt
@@ -12,10 +12,9 @@ from s2fft.sampling import s2_samples as samples
 
 rho_crit = lib.cvar.constants.RHO_CRITICAL
 
-def tidal_tensor_jax(hpmap):
+def tidal_tensor_jax(hpmap, nside):
 
     delta = jnp.copy(hpmap)
-    nside = hp.get_nside(hpmap)
 
     L = 512
 
@@ -55,7 +54,7 @@ def Epsilon2_NLA(cosmo, z, sxy, A1):
 def Epsilon1_TT(cosmo, z, sxx, syy, A2):
     gz = jc.background.growth_factor(cosmo, 1./(1+z))
     Fact = 5 * A2 * 5e-14 * rho_crit * cosmo.Omega_c / gz**2
-    e1_TT = Fact * (syy**2 - sxx**2)
+    e1_TT = Fact * (sxx**2 - syy**2)
     return e1_TT
 
 def Epsilon2_TT(cosmo, z, sxy, sxx, syy, A2):
@@ -90,16 +89,18 @@ def TATT(cosmo, z, A1, bTA, A2, tidal_field, delta):
     e1_TT = Epsilon1_TT(cosmo, z, sxx, syy, A2)
     e2_TT = Epsilon2_TT(cosmo, z, sxy, sxx, syy, A2)
 
-    epsilon_NLA  = jnp.array(e1_NLA + 1j * e2_NLA)
-    epsilon_TATT = jnp.array(e1_TT  + 1j * e2_TT)
+    epsilon_NLA = jnp.empty(e1_NLA.shape, dtype=complex)
+    epsilon_TATT = jnp.empty(e1_NLA.shape, dtype=complex)
+    epsilon_NLA  = e1_NLA + 1j * e2_NLA
+    epsilon_TATT = e1_TT  + 1j * e2_TT
 
     epsilon_IA_TATT = epsilon_NLA * (1. + bTA * delta) + epsilon_TATT
 
     return epsilon_IA_TATT
 
-def get_IA(z, density_planes, A1=0.18, bTA=0.8, A2=0.1, model='NLA'):
+def get_IA(z, density_planes, nside, A1=0.18, bTA=0.8, A2=0.1, model='NLA'):
 
-    tidal_tensor_map = tidal_tensor_jax(density_planes)
+    tidal_tensor_map = tidal_tensor_jax(density_planes, nside)
 
     cosmo = jc.Planck15() #FIXME pass cosmo as argument (camb -> jax)
     redshift = jnp.atleast_1d(z)

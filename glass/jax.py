@@ -14,3 +14,5 @@ import glass._src.lensing as lensing
 import glass._src.math_utils as math_utils
 import glass._src.observations as observations
 import glass._src.points as points
+import glass._src.camb as camb
+import glass._src.shear_from_convergence as shear_from_convergence

@@ -1,6 +1,7 @@
 import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
+import glass.jax as jglass
 
 # use the CAMB cosmology that generated the matter power spectra
 import camb
@@ -12,8 +13,6 @@ import glass.fields
 import glass.shapes
 import glass.lensing
 import glass.observations
-import glass.camb
-import glass.intrinsic_alignments
 
 # cosmology for the simulation
 h = 0.7
@@ -63,7 +62,7 @@ convergence = glass.lensing.MultiPlaneConvergence(cosmo)
 n_arcmin2 = 0.3
 
 # true redshift distribution following a Smail distribution
-z = np.arange(0., 3., 0.01)
+z = np.arange(0.01, 3., 0.01)
 dndz = glass.observations.smail_nz(z, z_mode=0.9, alpha=2., beta=1.5)
 dndz *= n_arcmin2
 
@@ -82,44 +81,26 @@ bias = 1.2
 
 # ellipticity standard deviation as expected for a Stage-IV survey
 sigma_e = 0.27
-# %%
-# Plotting the overall redshift distribution and the
-# distribution for each of the equal density tomographic bins
-
-plt.figure()
-plt.title('redshift distributions')
-sum_nz = np.zeros_like(tomo_nz[0])
-for nz in tomo_nz:
-    plt.fill_between(z, nz, alpha=0.5)
-    sum_nz = sum_nz + nz
-plt.fill_between(z, dndz, alpha=0.2, label='dn/dz')
-plt.plot(z, sum_nz, ls='--', label='sum of the bins')
-plt.ylabel('dN/dz - gal/arcmin2')
-plt.xlabel('z')
-plt.legend()
-plt.tight_layout()
-plt.show()
 
 for i, delta_i in enumerate(matter):
-
-    ia = glass.intrinsic_alignments.get_IA(zb[i], delta_i, A1=0.18, bTA=0.8, A2=0.1, model='NLA')
+        
+    ia = jglass.intrinsic_alignments.get_IA(zb[i], delta_i, nside, A1=0.18, bTA=0.8, A2=0.1, model='NLA')
 
     hp.mollview(np.log10(2+delta_i))
     plt.show()
 
-
-    hp.mollview(np.log10(1+ia.real))
+    hp.mollview(ia.real)
     plt.show()
 
-    hp.mollview(np.log10(1+ia.imag))
+    hp.mollview(ia.imag)
     plt.show()
 
 
-    ia = glass.intrinsic_alignments.get_IA(zb[i], delta_i, A1=0.18, bTA=0.8, A2=0.1, model='TATT')
+    ia = jglass.intrinsic_alignments.get_IA(zb[i], delta_i, nside, A1=0.18, bTA=0.8, A2=0.1, model='TATT')
 
-    hp.mollview(np.log10(1+ia.real))
+    hp.mollview(ia.real)
     plt.show()
 
-    hp.mollview(np.log10(1+ia.imag))
+    hp.mollview(ia.imag)
     plt.show()
 
