@@ -1,7 +1,6 @@
 import numpy as np
 import healpy as hp
 import matplotlib.pyplot as plt
-import glass.jax as jglass
 
 # use the CAMB cosmology that generated the matter power spectra
 import camb
@@ -36,7 +35,7 @@ cosmo = Cosmology.from_camb(pars)
 zb = glass.shells.distance_grid(cosmo, 0., 3., dx=200.)
 
 # tophat window function for shells
-zs, ws = glass.shells.tophat_windows(zb)
+ws = glass.shells.tophat_windows(zb)
 
 # compute the angular matter power spectra of the shells with CAMB
 #cls = glass.camb.matter_cls(pars, lmax, zs, ws)
@@ -101,18 +100,18 @@ gam2_ia_bar = np.stack([np.zeros(hp.nside2npix(nside)) for i in range(5)],axis=0
 for i, delta_i in enumerate(matter):
 
     # compute the lensing maps for this shell
-    convergence.add_window(delta_i, zs[i], ws[i])
+    convergence.add_window(delta_i, ws[i])
 
     kappa_i = convergence.kappa
-    gamma_i = jglass.shear_from_convergence.from_convergence(kappa_i, shear=True, discretized=False)
+    gamma_i = glass.lensing.from_convergence(kappa_i, shear=True, discretized=False)
 
-    gamm1_i_jax, gamm2_i_jax = jglass.shear_from_convergence.get_shear(kappa_i, nside)    
+    #gamm1_i_jax, gamm2_i_jax = glass.shear_from_convergence.get_shear(kappa_i, nside)    
 
-    hp.mollview(gamma_i.real)
+    hp.mollview(gamma_i[0].imag)
     plt.show()
 
-    hp.mollview(gamm1_i_jax)
-    plt.show()
+    #hp.mollview(gamm1_i_jax)
+    #plt.show()
 
-    hp.mollview(gamma_i.real - gamm1_i_jax)
-    plt.show()  
+    #hp.mollview(gamma_i.real - gamm1_i_jax)
+    #plt.show()  
